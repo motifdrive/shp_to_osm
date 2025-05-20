@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+  osrm-extract:
+    image: osrm/osrm-backend
+    container_name: osrm-extract
+    command: osrm-extract -p /opt/car.lua /data/network.pbf
+    volumes:
+      - ./data:/data
+    restart: "no"
+
+  osrm-partition:
+    image: osrm/osrm-backend
+    container_name: osrm-partition
+    command: osrm-partition /data/network.osrm
+    volumes:
+      - ./data:/data
+    depends_on:
+      - osrm-extract
+    restart: "no"
+
+  osrm-customize:
+    image: osrm/osrm-backend
+    container_name: osrm-customize
+    command: osrm-customize /data/network.osrm
+    volumes:
+      - ./data:/data
+    depends_on:
+      - osrm-partition
+    restart: "no"
+
+  osrm-routed:
+    image: osrm/osrm-backend
+    container_name: osrm-routed
+    command: osrm-routed --algorithm mld /data/network.osrm
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/data
+    depends_on:
+      - osrm-customize
+    restart: always
